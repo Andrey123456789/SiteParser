@@ -1024,3 +1024,12 @@ packages/Respond.1.2.0/Respond.1.2.0.nupkg
 packages/WebGrease.1.5.2/lib/WebGrease.dll
 packages/WebGrease.1.5.2/tools/WG.exe
 packages/WebGrease.1.5.2/WebGrease.1.5.2.nupkg
+packages/Antlr.3.4.1.9004/Antlr.3.4.1.9004.nupkg
+packages/Antlr.3.4.1.9004/Antlr.3.4.1.9004.nupkg
+packages/Antlr.3.4.1.9004/lib/Antlr3.Runtime.dll
+packages/Antlr.3.4.1.9004/lib/Antlr3.Runtime.pdb
+packages/bootstrap.3.0.0/bootstrap.3.0.0.nupkg
+packages/bootstrap.3.0.0/content/Content/bootstrap.css
+packages/bootstrap.3.0.0/content/Content/bootstrap.min.css
+packages/bootstrap.3.0.0/content/fonts/glyphicons-halflings-regular.eot
+packages/bootstrap.3.0.0/content/fonts/glyphicons-halflings-regular.svg
