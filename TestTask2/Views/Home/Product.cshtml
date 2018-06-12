@@ -1,0 +1,43 @@
+﻿@{
+    ViewBag.Title = "Product";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/scripts/jquery-3.3.1.min.js")
+    @Scripts.Render("~/scripts/jquery.validate.min.js")
+    @Scripts.Render("~/scripts/Product.js")
+
+</head>
+<body>
+    <h1 id="productDescription"></h1><br />
+    <div class="row">
+        <div class="col-sm-6">
+            <div id="myCarousel" class="carousel slide" data-ride="carousel">
+                <!-- Indicators -->
+                <ol id="carouselIndicators" class="carousel-indicators"></ol>
+
+                <!-- Wrapper for slides -->
+                <div id="carouselGroup" class="carousel-inner"></div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <h4 id="productSite"><span class="label label-default">Shop:</span> </h4><br />
+            <h4 id="productPrice"><span class="label label-default">Price:</span> </h4><br />
+            <h4 id="productTendency"><span class="label label-default">Tendency:</span> </h4><br />
+        </div>
+    </div>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            console.log("ready method start");
+            GetProduct(@Request.QueryString["id"]);
+            console.log("ready method end");
+        });
+    </script>
+</body>
+</html>
