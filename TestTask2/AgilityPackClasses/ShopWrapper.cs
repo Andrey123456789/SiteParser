@@ -11,23 +11,51 @@ using TestTask2.StringUtils;
 
 namespace TestTask2.AgilityPackClasses
 {
+    /// <summary>
+    /// Searches for products in the shop
+    /// </summary>
     public class ShopWrapper
     {
-       
+
+        /// <summary>
+        /// Number of objects to find
+        /// </summary>
         public const int MaxProducts = 10;
 
+        /// <summary>
+        /// Full domain name
+        /// </summary>
         private string domainName;
 
+        /// <summary>
+        /// Short domain name
+        /// </summary>
         private string shortDomain;
 
+        /// <summary>
+        /// Lock object for multithreading search
+        /// </summary>
         private object lockObj = new object();
 
+        /// <summary>
+        /// links which are already proceded
+        /// </summary>
         private HashSet<string> links = new HashSet<string>();
 
+        /// <summary>
+        /// found products
+        /// </summary>
         private HashSet<Product> products;
 
+        /// <summary>
+        /// Object which load documents
+        /// </summary>
         private HtmlWeb web = new HtmlWeb();
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="domainName">full domain name like http://domain.com/</param>
         public ShopWrapper(string domainName)
         {
             this.domainName = domainName;
@@ -35,6 +63,10 @@ namespace TestTask2.AgilityPackClasses
             links.Add(domainName);
         }
 
+        /// <summary>
+        /// Search for all products in the shop
+        /// </summary>
+        /// <returns></returns>
         public HashSet<Product> WrapShop()
         {
             products = new HashSet<Product>();
@@ -42,9 +74,13 @@ namespace TestTask2.AgilityPackClasses
             return products;
         }
 
+        /// <summary>
+        /// Wrap a single page and recursively go tho all incoming links
+        /// </summary>
+        /// <param name="url"></param>
         private void Wrap(string url)
         {
-            if (products.Count > MaxProducts) return;
+            if (products.Count >= MaxProducts) return;
             Debug.WriteLine("parsing page:" + url);
             var htmlDoc = web.Load(url);
 
@@ -52,7 +88,7 @@ namespace TestTask2.AgilityPackClasses
             {
                 if (AddIfNotEqual(products, prod))
                 {
-                    if (products.Count > MaxProducts) return;
+                    if (products.Count >= MaxProducts) return;
                 }
             }
 
@@ -90,13 +126,20 @@ namespace TestTask2.AgilityPackClasses
                 //change collections to asynchronous
                 Wrap(link);
 
-                if (products.Count > MaxProducts) return;
+                if (products.Count >= MaxProducts) return;
 
             }
 
             //TODO: add Task.WaitAll(tasks); 
         }
 
+        //TODO: add to Product class IComparable interface and remove this method
+        /// <summary>
+        /// Add product to the products if products don't contain product
+        /// </summary>
+        /// <param name="products"></param>
+        /// <param name="product"></param>
+        /// <returns></returns>
         private static bool AddIfNotEqual(HashSet<Product> products, Product product)
         {
             if (!products.Any(x => x.Description == product.Description && x.Price == product.Price))
