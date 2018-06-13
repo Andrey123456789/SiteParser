@@ -12,24 +12,37 @@
     @Scripts.Render("~/scripts/jquery-3.3.1.min.js")
     @Scripts.Render("~/scripts/jquery.validate.min.js")
     @Scripts.Render("~/scripts/Product.js")
+    @Scripts.Render("~/scripts/bootstrap.min.js")
 
 </head>
 <body>
     <h1 id="productDescription"></h1><br />
+
     <div class="row">
-        <div class="col-sm-6">
+        <div id="divRight" class="col-sm-6">
+
             <div id="myCarousel" class="carousel slide" data-ride="carousel">
-                <!-- Indicators -->
+
                 <ol id="carouselIndicators" class="carousel-indicators"></ol>
 
                 <!-- Wrapper for slides -->
-                <div id="carouselGroup" class="carousel-inner"></div>
+                <div id="carouselGroup" class="carousel-inner vertical"></div>
+
+                <a class="left carousel-control" href="#myCarousel" data-slide="prev">
+                    <span class="glyphicon glyphicon-chevron-up"></span>
+                    <span class="sr-only">Previous</span>
+                </a>
+                <a class="right carousel-control" href="#myCarousel" data-slide="next">
+                    <span class="glyphicon glyphicon-chevron-down"></span>
+                    <span class="sr-only">Next</span>
+                </a>
             </div>
         </div>
         <div class="col-sm-6">
             <h4 id="productSite"><span class="label label-default">Shop:</span> </h4><br />
             <h4 id="productPrice"><span class="label label-default">Price:</span> </h4><br />
             <h4 id="productTendency"><span class="label label-default">Tendency:</span> </h4><br />
+            <a href="@Url.Action("Index", "Home")" class="btn btn-info" role="button">Back to product list</a>
         </div>
     </div>
     <script type="text/javascript">

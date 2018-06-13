@@ -1,5 +1,6 @@
 ﻿//Get all products. If domain is not empty, program reads data from it before get all data:
 function GetAllProducts(domain = "") {
+    $('#parseDomain').prop('disabled', true);
     console.log("GetAllProducts start");
 
     $.ajax({
@@ -7,9 +8,13 @@ function GetAllProducts(domain = "") {
         type: 'GET',
         dataType: 'json',
         success: function (data) {
+            $('#parseDomain').prop('disabled', false);
+            $('#domainInput').val("");
             WriteResponse(data);
         },
         error: function (x, y, z) {
+            $('#parseDomain').prop('disabled', false);
+            $('#domainInput').val("");
             console.log("WriteResponse failed");
             alert(x + '\n' + y + '\n' + z);
         }
@@ -61,15 +66,20 @@ function ShowProduct(product) {
         $("#productTendency").append(delta);
 
         $.each(product.ImagesBase64, function (index, image) {
-            if (index == 0) {
-                $("#carouselIndicators").append('<li data-target="#myCarousel" data-slide-to="0" class="active"></li>');
-                $("#carouselGroup").append('<div class="item active"><img src="data:image/jpeg;base64,' + image + '" align= "right"></div>');
-            }
-            else {
-                $("#carouselIndicators").append('<li data-target="#myCarousel" data-slide-to="' + index + '"></li>');
-                $("#carouselGroup").append('<div class="item"><img src="data:image/jpeg;base64,' + image + '" align= "right"></div>');
-            }
+            //if (index == 0) {
+            //    //$("#carouselIndicators").append('<li data-target="#myCarousel" data-slide-to="0" class="active"></li>');
+            //    $("#carouselGroup").append('<div class="item active" align="center"><img src="data:image/jpeg;base64,' + image + '"></div>');
+            //}
+            //else {
+                //$("#carouselIndicators").append('<li data-target="#myCarousel" data-slide-to="' + index + '"></li>');
+            $("#carouselGroup").append('<div class="item imageDiv" align="center"><img class="imageBorder" src="data:image/jpeg;base64,' + image + '"></div>');
+            $("#carouselIndicators").append('<li data-target="#myCarousel" data-slide-to="' + index + '"></li>');
+            //}
         });
+
+        $('.item').first().addClass('active');
+        $('.carousel-indicators > li').first().addClass('active');
+        $('.carousel').carousel();
     }
     else {
         alert("Product doesn't exists!");

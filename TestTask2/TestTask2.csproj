@@ -203,6 +203,7 @@
     <Compile Include="Models\ProductExt.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StringUtils\CurrencyRegex.cs" />
+    <Compile Include="StringUtils\CurrencyRegices.cs" />
     <Compile Include="StringUtils\GetDomainName.cs" />
     <Compile Include="StringUtils\StringConstants.cs" />
   </ItemGroup>

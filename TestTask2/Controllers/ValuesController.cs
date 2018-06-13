@@ -42,7 +42,7 @@ namespace TestTask2.Controllers
                     if (prds.Count() == 1)
                     {
                         var p = prds.First();
-                        db.LoadImages(product);
+                        db.LoadImages(p);
 
                         List<Image> oldImages = p.Images.ToList();
 

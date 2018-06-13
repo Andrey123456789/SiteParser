@@ -6,31 +6,16 @@ using System.Web;
 
 namespace TestTask2.StringUtils
 {
-    public static class CurrencyRegex
+    public class CurrencyRegex:Regex
     {
-        private static string priceStr = @"[\d\s.,'`]*[\d]+[\d\s.,'`]*";
-        private static string connectionStr = @"\s*";
+        public string CurrencyStr { get; }
 
-        public static string[] currencyTrims = { ".", ",", "'", "`", " ", "\t" };
+        public char CurrencySign { get; }
 
-        public static Regex price = new Regex(priceStr, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-        public static List<Regex> regices = new List<Regex>()
+        public CurrencyRegex(string pattern,char currencySign, string currencyStr) : base(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
         {
-            new Regex(priceStr+connectionStr+@"грн",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant),
-            new Regex(priceStr+connectionStr+@"руб",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant),
-            new Regex(@"\s\$"+connectionStr+priceStr,RegexOptions.IgnoreCase|RegexOptions.CultureInvariant),
-        };
-
-        public static string CutPrice(string s)
-        {
-            foreach(string c in currencyTrims)
-            {
-                s = s.Replace(c, String.Empty);
-            }
-
-            return s;
+            CurrencySign = currencySign;
+            CurrencyStr = currencyStr;
         }
-
     }
 }

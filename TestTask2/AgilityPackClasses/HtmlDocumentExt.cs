@@ -18,7 +18,7 @@ namespace TestTask2.AgilityPackClasses
         public static IEnumerable<Product> GetProducts(this HtmlDocument doc, string shortDomain, string domain)
         {
             HashSet<Product> products = new HashSet<Product>();
-            HashSet<HtmlNode> currencyNodes = GetNodesContainingCurrency(doc);
+            HashSet<HtmlNode> currencyNodes = GetNodesContainingCurrency(doc.DocumentNode);
 
             foreach (var n in currencyNodes)
             {
@@ -32,7 +32,8 @@ namespace TestTask2.AgilityPackClasses
                                    .Select(e => e.GetAttributeValue("src", null))
                                    .Where(s => !String.IsNullOrEmpty(s));
 
-                    if (CheckNodeForSingleCurrency(node) == false)
+                    //if in one segment there is more than one price or no prices - node doesn't contain product
+                    if (CheckNodeForCurrency(node) !=1)
                     {
                         break;
                     }
@@ -48,36 +49,67 @@ namespace TestTask2.AgilityPackClasses
                                 url = domain + url;
                             }
 
-                            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
-                            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-
-                            // Check that the remote file was found. The ContentType
-                            // check is performed since a request for a non-existent
-                            // image file might be redirected to a 404-page, which would
-                            // yield the StatusCode "OK", even though the image was not
-                            // found.
-                            if ((response.StatusCode == HttpStatusCode.OK ||
-                                response.StatusCode == HttpStatusCode.Moved ||
-                                response.StatusCode == HttpStatusCode.Redirect) &&
-                                response.ContentType.StartsWith("image", StringComparison.OrdinalIgnoreCase))
+                            var hwr = (HttpWebRequest)WebRequest.Create(uri);
+                            var extension = CurrencyRegices.regImageExtension.Match(url); 
+                            hwr.Method = "GET";
+                            hwr.Accept = "image/"+extension+",image/*";
+                            hwr.KeepAlive = false;
+                            var resp = hwr.GetResponse();
+                            var respStream = resp.GetResponseStream();
+                            var contentLen = resp.ContentLength;
+                            byte[] outData;
+                            using (var tempMemStream = new MemoryStream())
                             {
-
-                                // if the remote file was found, download oit
-                                using (Stream inputStream = response.GetResponseStream())
+                                byte[] buffer = new byte[128];
+                                while (true)
                                 {
-                                    
-                                    List<byte> bufferData = new List<byte>();
-                                    using (var binaryReader = new BinaryReader(inputStream))
+                                    int read = respStream.Read(buffer, 0, buffer.Length);
+                                    if (read <= 0)
                                     {
-                                        byte[] buffer = binaryReader.ReadBytes(4096);
-                                        bufferData.AddRange(buffer);
+                                        outData = tempMemStream.ToArray();
+                                        break;
                                     }
-                                    byte[] imageData = bufferData.ToArray();
-                                    images.Add(new Image(imageData));
+                                    tempMemStream.Write(buffer, 0, read);
                                 }
                             }
+
+                            images.Add(new Image(outData));
+
+                            //HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
+                            //HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+
+                            //// Check that the remote file was found. The ContentType
+                            //// check is performed since a request for a non-existent
+                            //// image file might be redirected to a 404-page, which would
+                            //// yield the StatusCode "OK", even though the image was not
+                            //// found.
+                            //if ((response.StatusCode == HttpStatusCode.OK ||
+                            //    response.StatusCode == HttpStatusCode.Moved ||
+                            //    response.StatusCode == HttpStatusCode.Redirect) &&
+                            //    response.ContentType.StartsWith("image", StringComparison.OrdinalIgnoreCase))
+                            //{
+
+                            //    // if the remote file was found, download oit
+                            //    using (Stream inputStream = response.GetResponseStream())
+                            //    {
+
+                            //        List<byte> bufferData = new List<byte>();
+                            //        using (var binaryReader = new BinaryReader(inputStream))
+                            //        {
+                            //            byte[] buffer = binaryReader.ReadBytes(4096);
+                            //            bufferData.AddRange(buffer);
+                            //        }
+                            //        byte[] imageData = bufferData.ToArray();
+                            //        images.Add(new Image(imageData));
+                            //    }
+                            //}
                         }
-                        products.Add(new Product(shortDomain, node.GetLongestInnerText(), Int32.Parse(price), images));
+
+                        var description = node.GetLongestInnerText();
+
+                        if (description != "") {
+                            products.Add(new Product(shortDomain, description , Int32.Parse(price), images));
+                        }
                         break;
                     }
 
@@ -102,29 +134,26 @@ namespace TestTask2.AgilityPackClasses
 
             if (sLongest.Length == 0)
             {
-                return node.InnerText;
+                if (CheckNodeForCurrency(node) == 0)
+                    return node.InnerText;
+                else
+                    return "";
             }
             return sLongest;
         }
 
-
-        public static HashSet<HtmlNode> GetNodesContainingCurrency(this HtmlDocument doc)
-        {
-            return GetAllNodesContainingCurrency(doc.DocumentNode);
-        }
-
-        private static HashSet<HtmlNode> GetAllNodesContainingCurrency(HtmlNode node)
+        private static HashSet<HtmlNode> GetNodesContainingCurrency(HtmlNode node)
         {
             HashSet<HtmlNode> res = new HashSet<HtmlNode>();
 
             if (node.Name == "script")
                 return res;
 
-            if (CheckNodeForCurrency(node))
+            if (CheckNodeForCurrency(node)>0)
             {
                 foreach (var child in node.ChildNodes)
                 {
-                    foreach (var c in GetAllNodesContainingCurrency(child))
+                    foreach (var c in GetNodesContainingCurrency(child))
                     {
                         res.Add(c);
                     }
@@ -137,26 +166,33 @@ namespace TestTask2.AgilityPackClasses
             return res;
         }
 
-        private static bool CheckNodeForSingleCurrency(HtmlNode node)
+        private static int CheckNodeForCurrency(HtmlNode node)
         {
-            return CurrencyRegex.regices.Where(r => r.Matches(node.InnerText).Count == 1).Count() == 1;
+            int res = 0;
+
+            foreach(var reg in CurrencyRegices.CurRegices)
+            {
+                res += reg.Matches(node.InnerText).Count;
+            }
+
+            return res;
         }
 
 
-        private static bool CheckNodeForCurrency(HtmlNode node)
-        {
-            return CurrencyRegex.regices.Where(r => r.Match(node.InnerText).Success).Count() > 0;
-        }
+        //private static bool CheckNodeForCurrency(HtmlNode node)
+        //{
+        //    return CurrencyRegices.CurRegices.Where(r => r.Match(node.InnerText).Success).Count() > 0;
+        //}
 
         private static string FindPrice(HtmlNode node)
         {
-            foreach (var reg in CurrencyRegex.regices)
+            foreach (var reg in CurrencyRegices.CurRegices)
             {
                 var v = reg.Match(node.InnerText).Value;
                 if (v != "")
                 {
-                    var s = CurrencyRegex.price.Match(v).Value;
-                    return CurrencyRegex.CutPrice(s);
+                    var s = CurrencyRegices.price.Match(v).Value;
+                    return CurrencyRegices.CutPrice(s);
                 }
             }
             return "";

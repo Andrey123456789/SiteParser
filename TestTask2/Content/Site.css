@@ -10,11 +10,11 @@
 }
 
 /* Set width on the form input elements since they're 100% wide by default */
-input,
+/*input,
 select,
 textarea {
     max-width: 280px;
-}
+}*/
 
 .red{
     color:red;
@@ -24,7 +24,20 @@ textarea {
     color:green;
 }
 
-img {
+.imageDiv {
+    margin: 10px 10px 10px 10px;
+    border: 2px 2px 2px 2px solid blue;
+    -moz-box-shadow: 0px 0px 10px 1px blue;
+    -webkit-box-shadow: 0px 0px 10px 1px blue;
+    box-shadow: 0px 0px 10px 1px blue;
+}
+
+.imageBorder {
     width: 100%;
-    object-fit: contain
+    height: auto;
+}
+
+.carousel {
+    max-height: 700px;
+    overflow: hidden;
 }

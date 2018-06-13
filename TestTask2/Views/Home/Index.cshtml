@@ -17,10 +17,10 @@
     @Html.Hidden("RedirectTo", Url.Action("Product", "Home"))
     <div class="form-group">
         <label for="usr">Enter domain name:</label>
-        <input type="text" class="form-control" id="domainInput">
+        <input type="text" class="form-control" id="domainInput"/>
     </div>
 
-    <input class="btn btn-primary" type="button" value="Parse domain" onclick="GetAllProducts($('#domainInput').val())">
+    <input id="parseDomain" class="btn btn-primary" type="button" value="Parse domain" onclick="GetAllProducts($('#domainInput').val())" disabled>
 
     <div id="tableBlock"></div>
 

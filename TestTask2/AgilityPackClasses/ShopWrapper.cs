@@ -83,11 +83,18 @@ namespace TestTask2.AgilityPackClasses
                 if (links.Contains(link)) continue;
                 links.Add(link);
 
+                //TODO: Change this code to:
+                //Task t= new Task(()=>Wrap(link));
+                //t.Start();
+                //tasks.Add(t);
+                //change collections to asynchronous
                 Wrap(link);
 
                 if (products.Count > MaxProducts) return;
 
             }
+
+            //TODO: add Task.WaitAll(tasks); 
         }
 
         private static bool AddIfNotEqual(HashSet<Product> products, Product product)
