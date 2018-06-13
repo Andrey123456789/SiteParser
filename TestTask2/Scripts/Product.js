@@ -47,7 +47,16 @@ function ShowProduct(product) {
         $("#productSite").append(product.Domain);
         $("#productPrice").append(product.Price);
 
-        var delta = "" + ((product.DeltaPrice > 0) ? '<div class="green">+' + product.DeltaPrice + '</div>' : "") + ((product.DeltaPrice < 0) ? '<div class="red">' + product.DeltaPrice + '</div>' : "");
+        var delta = product.DeltaPrice;
+
+        if (delta < 0) {
+            $("#productTendency").addClass("red");
+        }
+
+        if (delta > 0) {
+            $("#productTendency").addClass("green");
+            delta = "+" + delta;
+        }
 
         $("#productTendency").append(delta);
 

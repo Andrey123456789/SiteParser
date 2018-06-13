@@ -4,78 +4,47 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Web.Http;
+using System.Web.Script.Serialization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestTask2;
 using TestTask2.Controllers;
+using TestTask2.Models;
+using TestTask2.Tests.FakeClasses;
 
 namespace TestTask2.Tests.Controllers
 {
     [TestClass]
     public class ValuesControllerTest
     {
-        [TestMethod]
-        public void Get()
+        ValuesController controller;
+        FakeEFContext context = new FakeEFContext();
+
+        [TestInitialize]
+        public void Init()
         {
-            // Упорядочение
-            ValuesController controller = new ValuesController();
+            controller = new ValuesController(context);
+        }
 
-            // Действие
-            IEnumerable<string> result = controller.Get();
 
-            // Утверждение
+        [TestMethod]
+        public void GetProduct()
+        {
+            var result = controller.GetProduct(1);
+            var js = new JavaScriptSerializer();
             Assert.IsNotNull(result);
-            Assert.AreEqual(2, result.Count());
-            Assert.AreEqual("value1", result.ElementAt(0));
-            Assert.AreEqual("value2", result.ElementAt(1));
+            var p = context.Products.First();
+            var pExt = new ProductExt(p, new string[] { Convert.ToBase64String(p.Images.First().Picture) });
+            Assert.AreEqual(js.Serialize(result), js.Serialize(pExt));
         }
 
         [TestMethod]
-        public void GetById()
+        public void GetProducts()
         {
-            // Упорядочение
-            ValuesController controller = new ValuesController();
-
-            // Действие
-            string result = controller.Get(5);
-
-            // Утверждение
-            Assert.AreEqual("value", result);
+            var result = controller.GetProducts();
+            var js = new JavaScriptSerializer();
+            Assert.AreEqual(js.Serialize(result.First()), js.Serialize(context.Products.First()));
+            Assert.AreEqual(result.Count(), context.Products.Count());
         }
 
-        [TestMethod]
-        public void Post()
-        {
-            // Упорядочение
-            ValuesController controller = new ValuesController();
-
-            // Действие
-            controller.Post("value");
-
-            // Утверждение
-        }
-
-        [TestMethod]
-        public void Put()
-        {
-            // Упорядочение
-            ValuesController controller = new ValuesController();
-
-            // Действие
-            controller.Put(5, "value");
-
-            // Утверждение
-        }
-
-        [TestMethod]
-        public void Delete()
-        {
-            // Упорядочение
-            ValuesController controller = new ValuesController();
-
-            // Действие
-            controller.Delete(5);
-
-            // Утверждение
-        }
     }
 }

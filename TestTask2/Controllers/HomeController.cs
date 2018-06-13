@@ -21,7 +21,10 @@ namespace TestTask2.Controllers
 
         public ActionResult Product(int? id)
         {
-            if (id == null) RedirectToAction("Index");
+            ViewBag.Title = "Product Information";
+            if (id == null) {
+                return RedirectToAction("Index");
+            }
             return View();
         }
     }

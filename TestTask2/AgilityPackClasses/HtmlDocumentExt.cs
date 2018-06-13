@@ -34,7 +34,6 @@ namespace TestTask2.AgilityPackClasses
 
                     if (CheckNodeForSingleCurrency(node) == false)
                     {
-                        //products.Add(new Product(node.InnerText, null, Int32.Parse(price)));
                         break;
                     }
 

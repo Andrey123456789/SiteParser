@@ -14,7 +14,7 @@ namespace TestTask2.Controllers
     public class ValuesController : ApiController
     {
 
-        EFContext db = new EFContext();
+        private IEFContext db = new EFContext();
 
         [HttpGet]
         [Route("api/values/getproducts/")]
@@ -22,7 +22,7 @@ namespace TestTask2.Controllers
         {
             if (Uri.TryCreate(domain, UriKind.Absolute, out Uri uri))
             {
-                var shopWrapper = new ShopWrapper(domain);
+                var shopWrapper = new ShopWrapper(uri.AbsoluteUri);
 
                 var products = shopWrapper.WrapShop();
 
@@ -42,7 +42,7 @@ namespace TestTask2.Controllers
                     if (prds.Count() == 1)
                     {
                         var p = prds.First();
-                        db.Entry(p).Collection(x => x.Images).Load();
+                        db.LoadImages(product);
 
                         List<Image> oldImages = p.Images.ToList();
 
@@ -75,7 +75,7 @@ namespace TestTask2.Controllers
         public ProductExt GetProduct(int id)
         {
             Product product = db.Products.Find(id);
-            db.Entry(product).Collection(x => x.Images).Load();
+            db.LoadImages(product);
             HashSet<string> imagesBase64 = new HashSet<string>();
             foreach(var img in product.Images)
             {
@@ -83,88 +83,6 @@ namespace TestTask2.Controllers
             }
             return new ProductExt(product, imagesBase64);
         }
-
-        //[HttpPost]
-        //public void CreateBook([FromBody]Book book)
-        //{
-        //    db.Books.Add(book);
-        //    db.SaveChanges();
-        //}
-
-        //[HttpPut]
-        //public void EditBook(int id, [FromBody]Product product)
-        //{
-        //    if (id != product.Id) return;
-
-        //    db.Products.Attach(product);
-
-
-        //    //var authors = book.Authors;
-        //    //var genres = book.Genres;
-
-        //    //book.Authors = null;
-        //    //book.Genres = null;
-
-        //    //db.Books.Attach(book);
-        //    //db.Entry(book).State = EntityState.Modified;
-
-        //    //var existingBook = db.Books.Find(book.Id);
-
-        //    //db.Entry(existingBook).Collection(i => i.Authors).Load();
-        //    //db.Entry(existingBook).Collection(i => i.Genres).Load();
-        //    //var deletedAuthors = existingBook.Authors.Where(oldA => !authors.Any(newA => newA.Id == oldA.Id)).ToList();
-        //    //var addedAuthors = authors.Where(newA => !existingBook.Authors.Any(oldA => oldA.Id == newA.Id)).ToList();
-
-        //    //deletedAuthors.ForEach(a => existingBook.Authors.Remove(a));
-
-        //    //foreach (var a in addedAuthors)
-        //    //{
-        //    //    if (db.Entry(a).State == EntityState.Detached)
-        //    //    {
-        //    //        if (a.Id != null)
-        //    //            db.Authors.Attach(a);
-        //    //        else
-        //    //            db.Authors.Add(a);
-        //    //    }
-        //    //    existingBook.Authors.Add(a);
-        //    //}
-
-        //    //var deletedGenres = existingBook.Genres.Where(oldG => !genres.Any(newG => newG.Id == oldG.Id)).ToList();
-        //    //var addedGenres = genres.Where(newG => !existingBook.Genres.Any(oldG => oldG.Id == newG.Id)).ToList();
-
-        //    //deletedGenres.ForEach(g => existingBook.Genres.Remove(g));
-
-        //    //foreach (var g in addedGenres)
-        //    //{
-        //    //    if (db.Entry(g).State == EntityState.Detached)
-        //    //    {
-        //    //        if (g.Id != null)
-        //    //            db.Genres.Attach(g);
-        //    //        else
-        //    //            db.Genres.Add(g);
-        //    //    }
-
-        //    //    existingBook.Genres.Add(g);
-        //    //}
-
-        //    ////existingBook.Name = book.Name;
-        //    ////existingBook.Publisher = book.Publisher;
-        //    ////existingBook.Year = book.Year;
-
-        //    //db.SaveChanges();
-
-        //}
-
-        //[HttpDelete]
-        //public void DeleteBook(int id)
-        //{
-        //    Book book = db.Books.Find(id);
-        //    if (book != null)
-        //    {
-        //        db.Books.Remove(book);
-        //        db.SaveChanges();
-        //    }
-        //}
 
         protected override void Dispose(bool disposing)
         {
@@ -175,9 +93,14 @@ namespace TestTask2.Controllers
             base.Dispose(disposing);
         }
 
-        static ValuesController()
+        public ValuesController()
         {
 
+        }
+
+        public ValuesController(IEFContext context)
+        {
+            db = context;
         }
     }
 }

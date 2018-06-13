@@ -10,8 +10,6 @@ namespace TestTask2.StringUtils
     {
         public static HashSet<Regex> linksToSkip = new HashSet<Regex>()
         {
-           //new Regex("#",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant),
-           //new Regex("//",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant),
            new Regex(@"^mailto:",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant),
            new Regex(@"^javascript:",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant),
         };

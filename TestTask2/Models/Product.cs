@@ -13,11 +13,6 @@ namespace TestTask2.Models
 
         public virtual ICollection<Image> Images { get; set; }
 
-        //public Product(string domain, string descrption, int price) : base(domain, descrption, price)
-        //{
-
-        //}
-
         public Product(string domain, string descrption, int price, ICollection<Image> images) : base(domain, descrption, price)
         {
             this.Images = images;

@@ -5,9 +5,9 @@ using System.Web;
 
 namespace TestTask2.Models
 {
-    public class Image
+    public class Image : ModelId
     {
-        public int? Id { get; set; }
+
         public byte[] Picture { get; set; }
 
         public Image(byte[] picture)

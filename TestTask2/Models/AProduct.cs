@@ -7,14 +7,8 @@ using System.Web;
 
 namespace TestTask2.Models
 {
-    public abstract class AProduct
+    public abstract class AProduct : ModelId
     {
-        /// <summary>
-        /// Id of the product
-        /// </summary>
-        [Key]
-        public int? Id { get; set; }
-
         [Required]
         public string Description { get; set; }
 
