@@ -14,18 +14,30 @@ namespace TestTask2.AgilityPackClasses
 {
     public static class HtmlDocumentExt
     {
-
+        /// <summary>
+        /// Gets all products from page
+        /// </summary>
+        /// <param name="doc">document</param>
+        /// <param name="shortDomain">just domain name like domain.com</param>
+        /// <param name="domain">full domain name like http://domain.com/ </param>
+        /// <returns></returns>
         public static IEnumerable<Product> GetProducts(this HtmlDocument doc, string shortDomain, string domain)
         {
+
             HashSet<Product> products = new HashSet<Product>();
+
+            //Seaches nodes which contain attribute("грн" for instance) only once
             HashSet<HtmlNode> currencyNodes = GetNodesContainingCurrency(doc.DocumentNode);
 
             foreach (var n in currencyNodes)
             {
                 var node = n;
                 IEnumerable<string> urls;
+                //parsing price value from node
                 string price = FindPrice(node);
 
+                //moving each node from child to parent, until al least one picture is found.
+                //if node contains more than one price - cycle is aborted.
                 do
                 {
                     urls = node.Descendants("img")
@@ -92,6 +104,11 @@ namespace TestTask2.AgilityPackClasses
             return products;
         }
 
+        /// <summary>
+        /// Gets the longest value of InnerText of object which doesn't contain children with non-empty innerText
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns>The longest inner text</returns>
         public static string GetLongestInnerText(this HtmlNode node)
         {
             var sLongest = "";
@@ -115,6 +132,11 @@ namespace TestTask2.AgilityPackClasses
             return sLongest;
         }
 
+        /// <summary>
+        /// Get all nodes containing price attribute ("грн" for instance) only once.
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
         private static HashSet<HtmlNode> GetNodesContainingCurrency(HtmlNode node)
         {
             HashSet<HtmlNode> res = new HashSet<HtmlNode>();
@@ -139,6 +161,11 @@ namespace TestTask2.AgilityPackClasses
             return res;
         }
 
+        /// <summary>
+        /// Checks number of occurences of the attribute ("грн" for instance) in the node
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
         private static int CheckNodeForCurrency(HtmlNode node)
         {
             int res = 0;
@@ -150,12 +177,6 @@ namespace TestTask2.AgilityPackClasses
 
             return res;
         }
-
-
-        //private static bool CheckNodeForCurrency(HtmlNode node)
-        //{
-        //    return CurrencyRegices.CurRegices.Where(r => r.Match(node.InnerText).Success).Count() > 0;
-        //}
 
         private static string FindPrice(HtmlNode node)
         {
