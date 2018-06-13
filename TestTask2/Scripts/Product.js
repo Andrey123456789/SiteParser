@@ -1,5 +1,5 @@
 ﻿//Get all products. If domain is not empty, program reads data from it before get all data:
-function GetAllProducts(domain = "") {
+function GetAllProducts(domain) {
     $('#parseDomain').prop('disabled', true);
     console.log("GetAllProducts start");
 
@@ -22,7 +22,6 @@ function GetAllProducts(domain = "") {
     console.log("GetAllProducts end");
 }
 
-// вывод полученных данных на экран
 function WriteResponse(products) {
     console.log("WriteResponse start");
     var strResult = "<table class='table table_stripped'><th>Site</th><th>Product</th><th>Price</th><th>Tendency</th><th></th>";
@@ -43,7 +42,6 @@ function WriteResponse(products) {
     console.log("WriteResponse end");
 }
 
-// вывод данных редактируемой книги в поля для редактирования
 function ShowProduct(product) {
     console.log("ShowProduct start");
     console.log(product);
