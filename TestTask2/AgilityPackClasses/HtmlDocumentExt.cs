@@ -75,34 +75,7 @@ namespace TestTask2.AgilityPackClasses
 
                             images.Add(new Image(outData));
 
-                            //HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
-                            //HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-
-                            //// Check that the remote file was found. The ContentType
-                            //// check is performed since a request for a non-existent
-                            //// image file might be redirected to a 404-page, which would
-                            //// yield the StatusCode "OK", even though the image was not
-                            //// found.
-                            //if ((response.StatusCode == HttpStatusCode.OK ||
-                            //    response.StatusCode == HttpStatusCode.Moved ||
-                            //    response.StatusCode == HttpStatusCode.Redirect) &&
-                            //    response.ContentType.StartsWith("image", StringComparison.OrdinalIgnoreCase))
-                            //{
-
-                            //    // if the remote file was found, download oit
-                            //    using (Stream inputStream = response.GetResponseStream())
-                            //    {
-
-                            //        List<byte> bufferData = new List<byte>();
-                            //        using (var binaryReader = new BinaryReader(inputStream))
-                            //        {
-                            //            byte[] buffer = binaryReader.ReadBytes(4096);
-                            //            bufferData.AddRange(buffer);
-                            //        }
-                            //        byte[] imageData = bufferData.ToArray();
-                            //        images.Add(new Image(imageData));
-                            //    }
-                            //}
+                            
                         }
 
                         var description = node.GetLongestInnerText();
@@ -114,7 +87,7 @@ namespace TestTask2.AgilityPackClasses
                     }
 
                     node = node.ParentNode;
-                } while (node.ParentNode != null);
+                } while (node != null);
             }
             return products;
         }
