@@ -1,4 +1,4 @@
-﻿//Get all products. If domain is not empty, program reads data from it before get all data:
+﻿//Get all products. If domain is not empty, program reads data from it before get all data
 function GetAllProducts(domain) {
     $('#parseDomain').prop('disabled', true);
     console.log("GetAllProducts start");
@@ -22,6 +22,7 @@ function GetAllProducts(domain) {
     console.log("GetAllProducts end");
 }
 
+//Writing a response to page
 function WriteResponse(products) {
     console.log("WriteResponse start");
     var strResult = "<table class='table table_stripped'><th>Site</th><th>Product</th><th>Price</th><th>Tendency</th><th></th>";
@@ -42,6 +43,7 @@ function WriteResponse(products) {
     console.log("WriteResponse end");
 }
 
+//Show information about single product
 function ShowProduct(product) {
     console.log("ShowProduct start");
     console.log(product);
@@ -85,6 +87,7 @@ function ShowProduct(product) {
     console.log("ShowProduct end");
 }
 
+//Get data for single product
 function GetProduct(id) {
     console.log("GetProduct start");
     $.ajax({
