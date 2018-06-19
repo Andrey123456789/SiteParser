@@ -26,7 +26,7 @@ namespace TestTask2.Models
         /// Symbol of the currency
         /// </summary>
         [Required]
-        public char Symbol { get; set; }
+        public string Symbol { get; set; }
 
         /// <summary>
         /// Short value of the currency, like грн
@@ -38,7 +38,7 @@ namespace TestTask2.Models
         {
             this.Name = name;
             this.Code = code;
-            this.Symbol = symbol;
+            this.Symbol = symbol.ToString();
             this.Short = @short;
         }
 

@@ -33,6 +33,11 @@ function GetPDP() {
             CurrencySeparators.push(s);
         }
     }
+    CurrencySeparators.push(" ");
+    CurrencySeparators.push("\t");
+    CurrencySeparators.push("\r");
+    CurrencySeparators.push("\n");
+    CurrencySeparators.push("\n");
 
     return {
         Domain: Domain,

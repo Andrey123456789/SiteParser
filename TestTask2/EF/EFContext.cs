@@ -10,6 +10,12 @@ namespace TestTask2.EF
 {
     public class EFContext : DbContext, IEFContext
     {
+
+        static EFContext()
+        {
+            Database.SetInitializer(new DBInit());
+        }
+
         public EFContext()
             : base("DefaultConnection")
         {

@@ -1,26 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Web;
 using TestTask2.StringUtils;
 
 namespace TestTask2.EF
 {
-    public static class DBInit
+    public class DBInit: CreateDatabaseIfNotExists<EFContext>
     {
-        public static void InitCurrencies()
+        protected override void Seed(EFContext context)
         {
-            using (EFContext context = new EFContext())
+            foreach (var c in Currencies.CurrencyValues)
             {
-                if (context.Currencies.Count() == 0)
-                {
-                   foreach(var c in Currencies.CurrencyValues)
-                    {
-                        context.Currencies.Add(c);
-                    }
-                    context.SaveChanges();
-                }
+                context.Currencies.Add(c);
             }
+            context.SaveChanges();
         }
     }
 }

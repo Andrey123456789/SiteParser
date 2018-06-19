@@ -12,7 +12,7 @@ namespace TestTask2.Models
         [NotMapped]
         public List<Regex> Regexes { get; }
 
-        public CurrencyRegexes(Currency cur, List<Regex> regexes) : base(cur.Name, cur.Code, cur.Symbol, cur.Short)
+        public CurrencyRegexes(Currency cur, List<Regex> regexes) : base(cur.Name, cur.Code, cur.Symbol[0], cur.Short)
         {
             this.Regexes = regexes;
         }

@@ -14,8 +14,6 @@ namespace TestTask2
     {
         protected void Application_Start()
         {
-            DBInit.InitCurrencies();
-
             AreaRegistration.RegisterAllAreas();
             GlobalConfiguration.Configure(WebApiConfig.Register);
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
