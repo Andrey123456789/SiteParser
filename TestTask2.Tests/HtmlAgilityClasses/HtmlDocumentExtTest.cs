@@ -9,6 +9,7 @@ using HtmlAgilityPack;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestTask2.AgilityPackClasses;
 using TestTask2.Models;
+using TestTask2.StringUtils;
 
 namespace TestTask2.Tests.HtmlAgilityClasses
 {
@@ -16,7 +17,16 @@ namespace TestTask2.Tests.HtmlAgilityClasses
     public class HtmlDocumentExtTest
     {
         HtmlDocument doc;
+
         byte[] img;
+
+        Currencies CurRegexes;
+
+        CurrencyRegexes currency;
+
+        HashSet<Product> prTest;
+
+        JavaScriptSerializer js;
 
         [TestInitialize]
         public void Init()
@@ -39,14 +49,14 @@ namespace TestTask2.Tests.HtmlAgilityClasses
 
             doc.DocumentNode.InnerHtml =
 
-                @"<!DOCTYPE html>                                                                                             " +
+        @"<!DOCTYPE html>                                                                                             " +
         @"<html>"+
         @"<head>"+
         @"</head>"+
         @"<body>"+
         @"<script>"+
         @"var s='< div > "+
-        @"	<span>Товар 4</span>" +
+        @"	<span>Товар 4 deleteWord</span>" +
         @"	<img src='http://via.placeholder.com/300/09f.png' />" +
         @"	<div>10 грн</div>" +
         @"</div>';" +
@@ -55,39 +65,100 @@ namespace TestTask2.Tests.HtmlAgilityClasses
         @"	<div>10 грн</div>"+
         @"</div>"+
         @"<div>"+
-        @"	<span>Товар 1</span>"+
+        @"	<span>Товар 1 deleteWord</span>" +
         @"	<img src='http://via.placeholder.com/300/09f.png' />"+
         @"	<div>10 грн</div>"+
         @"</div>"+
         @"<div><img src='http://via.placeholder.com/300/09f.png' /></div>"+
         @"<div>"+
-        @"	<span>Товар 2</span>"+
+        @"	<span>Товар 2 deleteWord</span>" +
         @"	<img src='http://via.placeholder.com/300/09f.png' />"+
         @"	<img src='http://via.placeholder.com/300/09f.png' />"+
         @"	<div>20 грн</div>"+
         @"</div>"+
         @"<div>"+
         @""+
-        @"<div><div><div><div>Товар 3</div></div></div></div>" +
+        @"<div><div><div><div>Товар 3 deleteWord</div></div></div></div>" +
         @"	<img src='http://via.placeholder.com/300/09f.png' />"+
         @"	<div>30 грн</div>"+
         @"</div>"+
-        @"</body>"+
+        @"<div><div><div><div>Товар неликвидный</div></div></div></div>" +
+        @"	<img src='http://via.placeholder.com/300/09f.png' />" +
+        @"	<div>1005000 грн</div>" +
+        @"</div>" +
+        @"</body>" +
         @"</html>";
+
+            CurRegexes = new Currencies("", new string[] { "`", "\t", "\n", });
+            currency = CurRegexes.GetAllCurRegexes().First();
+            js = new JavaScriptSerializer();
         }
 
         [TestMethod]
-        public void GetProductsHashSet()
+        public void GetProductsHashSet_InnerLongest()
         {
-             var products = doc.GetProducts("placeholder.com", "http://via.placeholder.com/");
-            HashSet <Product> prTest = new HashSet<Product>()
+            prTest = new HashSet<Product>()
             {
-                new Product("placeholder.com","Товар 1",10,new HashSet<Image>(){new Image(img) }),
-                new Product("placeholder.com","Товар 2",20,new HashSet<Image>(){new Image(img), new Image(img) }),
-                new Product("placeholder.com","Товар 3",30,new HashSet<Image>(){new Image(img) })
+                new Product("http://via.placeholder.com/","Товар 3",30,new HashSet<Image>(){new Image(img,"png") },currency),
+                new Product("http://via.placeholder.com/","Товар 2",20,new HashSet<Image>(){new Image(img,"png"), new Image(img,"png") },currency),
+                new Product("http://via.placeholder.com/","Товар 1",10,new HashSet<Image>(){new Image(img,"png") },currency),
             };
+            var pdp = new ParseDomainParams("http://via.placeholder.com/", new HashSet<string>() { " deleteWord", "\t" }, new HashSet<string>() { "неликвидный" }, new string[] { "`", "\t", "\n", }, "", AgilityPackClasses.DescriptionGetKind.dgkLongest, AgilityPackClasses.SearchPriceKind.spkInner);
+            var products = doc.GetProducts(pdp);
+            Debug.WriteLine(js.Serialize(products));
+            Debug.WriteLine(js.Serialize(prTest));
+            Assert.IsNotNull(products);
+            Assert.AreEqual(js.Serialize(products), js.Serialize(prTest));
 
-            var js = new JavaScriptSerializer();
+        }
+
+        [TestMethod]
+        public void GetProductsHashSet_OuterLongest()
+        {
+            prTest = new HashSet<Product>()
+            {
+                new Product("http://via.placeholder.com/","Товар 3",30,new HashSet<Image>(){new Image(img,"png") },currency),
+                new Product("http://via.placeholder.com/","Товар 1",10,new HashSet<Image>(){new Image(img,"png") },currency),
+                new Product("http://via.placeholder.com/","Товар 2",20,new HashSet<Image>(){new Image(img,"png"), new Image(img,"png") },currency),
+            };
+            var pdp = new ParseDomainParams("http://via.placeholder.com/", new HashSet<string>() { " deleteWord", "\t" }, new HashSet<string>() { "неликвидный" }, new string[] { "`", "\t", "\n", }, "", AgilityPackClasses.DescriptionGetKind.dgkLongest, AgilityPackClasses.SearchPriceKind.spkOuter);
+            var products = doc.GetProducts(pdp);
+            Debug.WriteLine(js.Serialize(products));
+            Debug.WriteLine(js.Serialize(prTest));
+            Assert.IsNotNull(products);
+            Assert.AreEqual(js.Serialize(products), js.Serialize(prTest));
+
+        }
+
+        [TestMethod]
+        public void GetProductsHashSet_InnerFull()
+        {
+            prTest = new HashSet<Product>()
+            {
+                new Product("http://via.placeholder.com/","Товар 3",30,new HashSet<Image>(){new Image(img,"png") },currency),
+                new Product("http://via.placeholder.com/","Товар 2",20,new HashSet<Image>(){new Image(img,"png"), new Image(img,"png") },currency),
+                new Product("http://via.placeholder.com/","Товар 1",10,new HashSet<Image>(){new Image(img,"png") },currency),
+            };
+            var pdp = new ParseDomainParams("http://via.placeholder.com/", new HashSet<string>() { " deleteWord", "\t" }, new HashSet<string>() { "неликвидный" }, new string[] { "`", "\t", "\n", }, "", AgilityPackClasses.DescriptionGetKind.dgkFull, AgilityPackClasses.SearchPriceKind.spkInner);
+            var products = doc.GetProducts(pdp);
+            Debug.WriteLine(js.Serialize(products));
+            Debug.WriteLine(js.Serialize(prTest));
+            Assert.IsNotNull(products);
+            Assert.AreEqual(js.Serialize(products), js.Serialize(prTest));
+
+        }
+
+        [TestMethod]
+        public void GetProductsHashSet_OuterFull()
+        {
+            prTest = new HashSet<Product>()
+            {
+                new Product("http://via.placeholder.com/","Товар 3",30,new HashSet<Image>(){new Image(img,"png") },currency),
+                new Product("http://via.placeholder.com/","Товар 1",10,new HashSet<Image>(){new Image(img,"png") },currency),
+                new Product("http://via.placeholder.com/","Товар 2",20,new HashSet<Image>(){new Image(img,"png"), new Image(img,"png") },currency),
+            };
+            var pdp = new ParseDomainParams("http://via.placeholder.com/", new HashSet<string>() { " deleteWord", "\t" }, new HashSet<string>() { "неликвидный" }, new string[] { "`", "\t", "\n", }, "", AgilityPackClasses.DescriptionGetKind.dgkFull, AgilityPackClasses.SearchPriceKind.spkOuter);
+            var products = doc.GetProducts(pdp);
             Debug.WriteLine(js.Serialize(products));
             Debug.WriteLine(js.Serialize(prTest));
             Assert.IsNotNull(products);

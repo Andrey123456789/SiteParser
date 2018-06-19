@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Web;
 using TestTask2.Extensions;
 using TestTask2.Models;
@@ -12,25 +13,43 @@ using TestTask2.StringUtils;
 namespace TestTask2.AgilityPackClasses
 {
     /// <summary>
+    /// A kind of getting product.Description
+    /// </summary>
+    public enum DescriptionGetKind
+    {
+        /// <summary>
+        /// A full text of the found segment(-price value) is taken as a Description
+        /// </summary>
+        dgkFull=0,
+
+        /// <summary>
+        /// The longest text of the sub-element of the found segment(-price value) is taken as a Description
+        /// </summary>
+        dgkLongest=1
+    }
+
+    public enum SearchPriceKind
+    {
+        /// <summary>
+        /// Searches maximum outer node, containing single price value
+        /// </summary>
+        spkOuter=0,
+
+        /// <summary>
+        /// Searches inner node, containing single price value, then goes up, until finds one or more images
+        /// </summary>
+        spkInner=1
+    }
+
+    /// <summary>
     /// Searches for products in the shop
     /// </summary>
     public class ShopWrapper
     {
-
         /// <summary>
         /// Number of objects to find
         /// </summary>
         public const int MaxProducts = 10;
-
-        /// <summary>
-        /// Full domain name
-        /// </summary>
-        private string domainName;
-
-        /// <summary>
-        /// Short domain name
-        /// </summary>
-        private string shortDomain;
 
         /// <summary>
         /// Lock object for multithreading search
@@ -38,29 +57,28 @@ namespace TestTask2.AgilityPackClasses
         private object lockObj = new object();
 
         /// <summary>
-        /// links which are already proceded
+        /// Links which are already proceded
         /// </summary>
         private HashSet<string> links = new HashSet<string>();
 
         /// <summary>
-        /// found products
+        /// Found products
         /// </summary>
         private HashSet<Product> products;
 
         /// <summary>
-        /// Object which load documents
+        /// Object which loads documents
         /// </summary>
         private HtmlWeb web = new HtmlWeb();
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="domainName">full domain name like http://domain.com/</param>
-        public ShopWrapper(string domainName)
+        private ParseDomainParams pdp;
+      
+        public ShopWrapper(ParseDomainParams pdp)
         {
-            this.domainName = domainName;
-            this.shortDomain = GetDomain.GetDomainFromUrl(domainName);
-            links.Add(domainName);
+            this.pdp = pdp;
+
+            //this.shortDomain = GetDomain.GetDomainFromUrl(domainName);
+            links.Add(pdp.Domain);
         }
 
         /// <summary>
@@ -70,12 +88,13 @@ namespace TestTask2.AgilityPackClasses
         public HashSet<Product> WrapShop()
         {
             products = new HashSet<Product>();
-            Wrap(domainName);
+            Wrap(pdp.Domain);
             return products;
         }
 
+        //TODO: Add parsing using schema.org
         /// <summary>
-        /// Wrap a single page and recursively go tho all incoming links
+        /// Wrap a single page and recursively go to all incoming links
         /// </summary>
         /// <param name="url"></param>
         private void Wrap(string url)
@@ -83,8 +102,7 @@ namespace TestTask2.AgilityPackClasses
             if (products.Count >= MaxProducts) return;
             Debug.WriteLine("parsing page:" + url);
             var htmlDoc = web.Load(url);
-
-            foreach (var prod in htmlDoc.GetProducts(domainName, shortDomain))
+            foreach (var prod in htmlDoc.GetProducts(pdp))
             {
                 if (AddIfNotEqual(products, prod))
                 {
@@ -104,13 +122,13 @@ namespace TestTask2.AgilityPackClasses
 
                 if (!Uri.TryCreate(link, UriKind.Absolute, out uri))
                 {
-                    domain = shortDomain;
-                    link = domainName + link;
+                    domain = pdp.ShortDomain;
+                    link = pdp.Domain + link;
                 }
                 else
                 {
                     domain = GetDomain.GetDomainFromUrl(uri);
-                    if (domain != shortDomain) continue;
+                    if (domain != pdp.ShortDomain) continue;
                 }
 
                 //processing links like http://mysite.com/#somedata
@@ -133,7 +151,7 @@ namespace TestTask2.AgilityPackClasses
             //TODO: add Task.WaitAll(tasks); 
         }
 
-        //TODO: add to Product class IComparable interface and remove this method
+        //TODO: add to Product interface IComparable and remove this method
         /// <summary>
         /// Add product to the products if products don't contain product
         /// </summary>
@@ -142,7 +160,7 @@ namespace TestTask2.AgilityPackClasses
         /// <returns></returns>
         private static bool AddIfNotEqual(HashSet<Product> products, Product product)
         {
-            if (!products.Any(x => x.Description == product.Description && x.Price == product.Price))
+            if (!products.Any(x => x.Description == product.Description && x.Price == product.Price && x.Currency.Code==product.Currency.Code))
             {
                 products.Add(product);
                 return true;

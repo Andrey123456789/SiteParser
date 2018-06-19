@@ -13,19 +13,22 @@ namespace TestTask2.Models
         public string Description { get; set; }
 
         [Required]
-        public int Price { get; set; }
+        public decimal Price { get; set; }
 
         [DefaultValue(0)]
-        public int DeltaPrice { get; set; }
+        public decimal DeltaPrice { get; set; }
 
         [Required]
         public string Domain { get; set; }
 
-        public AProduct(string domain, string descrption, int price)
+        public virtual Currency Currency { get; set; }
+
+        public AProduct(string domain, string descrption, int price, Currency currency)
         {
             this.Description = descrption;
             this.Price = price;
             this.Domain = domain;
+            this.Currency = currency;
         }
 
         public AProduct()

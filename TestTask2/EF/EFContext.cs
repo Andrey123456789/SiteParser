@@ -17,10 +17,23 @@ namespace TestTask2.EF
 
         public DbSet<Product> Products { get; set; }
         public DbSet<Image> Images { get; set; }
+        public DbSet<Currency> Currencies { get; set; }
 
-        public void LoadImages(Product p)
+        public void LoadConnections(Product p)
         {
             Entry(p).Collection(x => x.Images).Load();
+            Entry(p).Reference(x => x.Currency).Load();
         }
+
+        public void LoadCurrency(Product p)
+        {
+            Entry(p).Reference(x => x.Currency).Load();
+        }
+
+        public Currency FindCurrency(string code)
+        {
+            return Currencies.Where(c => c.Code == code).FirstOrDefault();
+        }
+
     }
 }

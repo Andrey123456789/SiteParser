@@ -15,14 +15,19 @@ namespace TestTask2.Controllers
     {
 
         private IEFContext db = new EFContext();
-
+        [HttpPost]
         [HttpGet]
         [Route("api/values/getproducts/")]
-        public IEnumerable<Product> GetProducts(string domain = "")
+        public IEnumerable<Product> GetProducts([FromBody] ParseDomainParams pdp)
         {
-            if (Uri.TryCreate(domain, UriKind.Absolute, out Uri uri))
+            if (pdp != null)
             {
-                var shopWrapper = new ShopWrapper(uri.AbsoluteUri);
+                System.Diagnostics.Debug.WriteLine("Parse enums:" + pdp.DescriptionGetKind + " " + pdp.SearchPriceKind);
+            }
+            //var pdp1 = new ParseDomainParams("https://www.olx.ua", new HashSet<string>(), new HashSet<string>(), new string[] { "" }, "", 0, 0);
+            if (pdp != null && Uri.TryCreate(pdp.Domain, UriKind.Absolute, out Uri uri))
+            {
+                var shopWrapper = new ShopWrapper(pdp);
 
                 var products = shopWrapper.WrapShop();
 
@@ -35,39 +40,39 @@ namespace TestTask2.Controllers
                         db.Images.Add(image);
                     }
 
-                    var prds = db.Products.Where(x => x.Description == product.Description && x.Domain == product.Domain);
+                    //TODO: Add try catch exception
+                    var p = db.Products.Any() ? db.Products.Where(x => x.Description == product.Description && x.Domain == product.Domain && x.Currency.Code == product.Currency.Code).SingleOrDefault() : null;
 
-                    if (prds.Count() > 1) throw new Exception("Database allows product with equal names for one domain");
-
-                    if (prds.Count() == 1)
+                    if (p != null)
                     {
-                        var p = prds.First();
-                        db.LoadImages(p);
+                        db.LoadConnections(p);
 
                         List<Image> oldImages = p.Images.ToList();
 
                         oldImages.ForEach(img => p.Images.Remove(img));
 
-                        foreach(var img in product.Images)
+                        foreach (var img in product.Images)
                         {
                             p.Images.Add(img);
                         }
 
                         p.DeltaPrice = p.Price - product.Price;
                         p.Price = product.Price;
-
+                        p.Currency = db.FindCurrency(p.Currency.Code);
                         db.Products.Attach(p);
                     }
                     else
                     {
+                        product.Currency = db.FindCurrency(product.Currency.Code);
                         db.Products.Add(product);
                     }
                 }
                 db.SaveChanges();
 
             }
-
-            return db.Products.ToList();
+            var list = db.Products.ToList();
+            list.ForEach(x => db.LoadCurrency(x));
+            return list;
 
         }
 
@@ -75,11 +80,11 @@ namespace TestTask2.Controllers
         public ProductExt GetProduct(int id)
         {
             Product product = db.Products.Find(id);
-            db.LoadImages(product);
+            db.LoadConnections(product);
             HashSet<string> imagesBase64 = new HashSet<string>();
-            foreach(var img in product.Images)
+            foreach (var img in product.Images)
             {
-                imagesBase64.Add(Convert.ToBase64String(img.Picture));
+                imagesBase64.Add(img.Extension + "; base64," + Convert.ToBase64String(img.Picture));
             }
             return new ProductExt(product, imagesBase64);
         }

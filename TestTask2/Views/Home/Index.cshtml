@@ -1,4 +1,5 @@
-﻿@{
+﻿@using TestTask2.AgilityPackClasses;
+@{
     ViewBag.Title = "Home Page";
     Layout = null;
 }
@@ -11,23 +12,113 @@
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/scripts/jquery-3.3.1.min.js")
     @Scripts.Render("~/scripts/jquery.validate.min.js")
+    @Scripts.Render("~/scripts/bootstrap.min.js")
     @Scripts.Render("~/scripts/Product.js")
+    @Scripts.Render("~/scripts/IndexUI.js")
 </head>
 <body>
+    <h2 align="center">Choose parse domain params:</h2>
     @Html.Hidden("RedirectTo", Url.Action("Product", "Home"))
-    <div class="form-group">
-        <label for="usr">Enter domain name:</label>
-        <input type="text" class="form-control" id="domainInput"/>
+    <div class="form-group well row">
+        <div class="panel panel-primary col-sm-3" id="wordsToSkip">
+            <div class="panel-heading">
+                <h5 class="panel-title">Products with these words will be skipped:</h5>
+            </div>
+            <div class="panel-body">
+                <ul id="ulSkip" class="list-group">
+                    
+                </ul>
+            </div>
+            <label for="usr">Enter word:</label>
+            <input type="text" class="form-control" id="wordSkipInput" />
+            <input id="wordSkipBut" class="btn btn-primary" type="button" value="Add" onclick="AddWordToSkip($('#wordSkipInput').val())">
+        </div>
+
+        <div class="panel panel-primary col-sm-3" id="wordsToRemove">
+            <div class="panel-heading">
+                <h5 class="panel-title">These words will be deleted from product description:</h5>
+            </div>
+            <div class="panel-body">
+                <ul id="ulRemove" class="list-group">
+                    
+                </ul>
+            </div>
+            <label for="usr">Enter word:</label>
+            <input type="text" class="form-control" id="wordRemoveInput" />
+            <input id="wordRemoveBut" class="btn btn-primary" type="button" value="Add" onclick="AddWordToRemove($('#wordRemoveInput').val())" />
+        </div>
+        <div class="col-sm-1">
+            <h5>Choose decimal separator:</h5>
+            <div class="btn-group">
+                <button class="btn">empty</button>
+                <button class="btn dropdown-toggle" data-toggle="dropdown">
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu">
+                    <li><a tabindex="-1" href="#">.</a></li>
+                    <li><a tabindex="-1" href="#">,</a></li>
+                    <li><a tabindex="-1" href="#">empty</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-sm-1">
+            <h5>Choose sign-groups separators:</h5>
+            <form>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="checkBut1" value="\.">
+                    <label class="form-check-label" for="separatorCheck1">.</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="checkBut2" value=",">
+                    <label class="form-check-label" for="separatorCheck1">,</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="checkBut3" value="`">
+                    <label class="form-check-label" for="separatorCheck1">`</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="checkBut4" value="'">
+                    <label class="form-check-label" for="separatorCheck1">'</label>
+                </div>
+
+            </form>
+        </div>
+        
+        <div class="col-sm-2">
+            <h5>Choose description search method:</h5>
+            <div class="radio">
+                <label><input type="radio" name="descriptionMethod1" value="@((int)DescriptionGetKind.dgkLongest)" checked>Program chooses the longest text of an element</label>
+            </div>
+            <div class="radio">
+                <label><input type="radio" name="descriptionMethod1" value="@((int)DescriptionGetKind.dgkFull)">Program chooses whole text</label>
+            </div>
+        </div>
+        
+        <div class="col-sm-2">
+            <h5>Choose whole product search method:</h5>
+            <div class="radio">
+                <label><input type="radio" name="searchMethod1" value="@((int)SearchPriceKind.spkInner)" checked>Program reaches the smallest element, containing price, than goes up until at least one picture is found</label>
+            </div>
+            <div class="radio">
+                <label><input type="radio" name="searchMethod1" value="@((int)SearchPriceKind.spkOuter)">Program takes the largest containing the single price</label>
+            </div>
+        </div>
+
     </div>
 
-    <input id="parseDomain" class="btn btn-primary" type="button" value="Parse domain" onclick="GetAllProducts($('#domainInput').val())" disabled>
+    <div class="form-group well">
+        <label for="usr">Enter domain name:</label>
+        <input type="text" class="form-control" id="domainInput" />
+        <input id="parseDomain" class="btn btn-primary" type="button" value="Parse domain" onclick="GetAllProducts(GetPDP())" disabled>
+    </div>
+
 
     <div id="tableBlock"></div>
 
     <script type="text/javascript">
         $(document).ready(function () {
             console.log("ready method start");
-            GetAllProducts("");
+            GetAllProducts(null);
             console.log("ready method end");
         });
     </script>

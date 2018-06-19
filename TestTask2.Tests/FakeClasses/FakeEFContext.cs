@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TestTask2.EF;
 using TestTask2.Models;
+using TestTask2.StringUtils;
 
 namespace TestTask2.Tests.FakeClasses
 {
@@ -19,7 +20,7 @@ namespace TestTask2.Tests.FakeClasses
 
         }
 
-        public void LoadImages(Product p)
+        public void LoadConnections(Product p)
         {
             
         }
@@ -27,6 +28,16 @@ namespace TestTask2.Tests.FakeClasses
         public int SaveChanges()
         {
             return 0;
+        }
+
+        public Currency FindCurrency(string code)
+        {
+            return Currencies.CurrencyValues.Where(c => c.Code == code).FirstOrDefault();
+        }
+
+        public void LoadCurrency(Product p)
+        {
+
         }
 
         public FakeEFContext():base()
@@ -37,9 +48,9 @@ namespace TestTask2.Tests.FakeClasses
 
           for(int i=1; i<10; i++)
             {
-                var image = new Image(picture) { Id = i };
+                var image = new Image(picture,"png") { Id = i };
                 Images.Add(image);
-                Products.Add(new Product("www.mydomain.com", i.ToString(), i, new HashSet<Image>() { image }) { Id = i });
+                Products.Add(new Product("www.mydomain.com", i.ToString(), i, new HashSet<Image>() { image },Currencies.CurrencyValues[0]) { Id = i });
             }
         }
     }

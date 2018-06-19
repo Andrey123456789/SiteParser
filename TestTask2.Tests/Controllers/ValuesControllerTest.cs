@@ -33,18 +33,23 @@ namespace TestTask2.Tests.Controllers
             var js = new JavaScriptSerializer();
             Assert.IsNotNull(result);
             var p = context.Products.First();
-            var pExt = new ProductExt(p, new string[] { Convert.ToBase64String(p.Images.First().Picture) });
+            var img = p.Images.First();
+            
+            var pExt = new ProductExt(p, new string[] { img.Extension + "; base64,"+Convert.ToBase64String(img.Picture) });
             Assert.AreEqual(js.Serialize(result), js.Serialize(pExt));
         }
 
         [TestMethod]
         public void GetProducts()
         {
-            var result = controller.GetProducts();
+            var pdp = new ParseDomainParams("http://via.placeholder.com/", new HashSet<string>(), new HashSet<string>(), new string[] { "`" }, "", AgilityPackClasses.DescriptionGetKind.dgkLongest, AgilityPackClasses.SearchPriceKind.spkInner);
+            var result = controller.GetProducts(pdp);
             var js = new JavaScriptSerializer();
             Assert.AreEqual(js.Serialize(result.First()), js.Serialize(context.Products.First()));
             Assert.AreEqual(result.Count(), context.Products.Count());
         }
+
+        
 
     }
 }

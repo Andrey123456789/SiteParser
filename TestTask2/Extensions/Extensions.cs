@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 
 namespace TestTask2.Extensions
@@ -41,6 +42,14 @@ namespace TestTask2.Extensions
             lock (lockObj)
             {
                 hashset.Remove(value);
+            }
+        }
+
+        public static async Task ForEachAsync<T>(this List<T> list, Func<T, Task> func)
+        {
+            foreach (var value in list)
+            {
+                await func(value);
             }
         }
     }

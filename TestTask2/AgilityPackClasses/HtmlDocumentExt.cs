@@ -5,8 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Policy;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Web;
 using HtmlAgilityPack;
+using TestTask2.Extensions;
 using TestTask2.Models;
 using TestTask2.StringUtils;
 
@@ -18,83 +21,109 @@ namespace TestTask2.AgilityPackClasses
         /// Gets all products from page
         /// </summary>
         /// <param name="doc">document</param>
-        /// <param name="shortDomain">just domain name like domain.com</param>
-        /// <param name="domain">full domain name like http://domain.com/ </param>
+        /// <param name="pdp">Parse domain params</param>
         /// <returns></returns>
-        public static IEnumerable<Product> GetProducts(this HtmlDocument doc, string shortDomain, string domain)
+        public static IEnumerable<Product> GetProducts(this HtmlDocument doc, ParseDomainParams pdp)
         {
+            if (pdp.SearchPriceKind == SearchPriceKind.spkInner)
+                return doc.GetProductsInner(pdp);
+            else
+                return doc.DocumentNode.GetProductsOuter(pdp);
+        }
 
+        /// <summary>
+        /// Gets all products from page using SearchPriceKind.spkOuter
+        /// </summary>
+        /// <param name="node">node</param>
+        /// <param name="pdp">parse params</param>
+        /// <returns></returns>
+        private static IEnumerable<Product> GetProductsOuter(this HtmlNode node, ParseDomainParams pdp)
+        {
+            HashSet<Product> res = new HashSet<Product>();
+            if (node.Name == "script")
+                return res;
+            int ocCount = GetNodePriceCount(node, pdp);
+
+            if (ocCount > 1)
+            {
+                if (node.ChildNodes.Count > 1)
+                {
+                    List<Task> tasks = new List<Task>();
+                    object lockObj = new object();
+                    foreach (var child in node.ChildNodes)
+                    {
+                        Task t = new Task(() =>
+                        {
+                            var childRes = GetProductsOuter(child, pdp);
+
+                            foreach (var p in childRes)
+                            {
+                                res.LAdd(p, lockObj);
+                            }
+                        });
+                        t.Start();
+                        tasks.Add(t);
+                    }
+                    Task.WaitAll(tasks.ToArray());
+                }
+                else
+                {
+                    foreach (var p in GetProductsOuter(node.FirstChild, pdp))
+                    {
+                        res.Add(p);
+                    }
+                }
+            }
+            else if (ocCount == 1)
+            {
+                //Creating single product:
+                var urls = node.GetImageURLs();
+
+                if (TryGetSingleOccurance(node, pdp, out CurrencyRegexes currency, out Regex regex))
+                {
+                    var product = BuildProduct(node, pdp, regex, urls, currency);
+                    if (product != null)
+                        res.Add(product);
+                }
+            }
+
+            return res;
+        }
+
+        /// <summary>
+        /// Gets all products from page using SearchPriceKind.spkInner
+        /// </summary>
+        /// <param name="node">node</param>
+        /// <param name="pdp">parse params</param>
+        /// <returns></returns>
+        private static IEnumerable<Product> GetProductsInner(this HtmlDocument doc, ParseDomainParams pdp)
+        {
             HashSet<Product> products = new HashSet<Product>();
 
             //Seaches nodes which contain attribute("грн" for instance) only once
-            HashSet<HtmlNode> currencyNodes = GetNodesContainingCurrency(doc.DocumentNode);
+            HashSet<NodeCurrencyInfo> currencyNodeInfos = GetInnerNodesContainingSinglePrice(doc.DocumentNode, pdp);
 
-            foreach (var n in currencyNodes)
+            foreach (var cni in currencyNodeInfos)
             {
-                var node = n;
+                var node = cni.Node;
                 IEnumerable<string> urls;
-                //parsing price value from node
-                string price = FindPrice(node);
 
-                //moving each node from child to parent, until al least one picture is found.
-                //if node contains more than one price - cycle is aborted.
+                //Moving each node from child to parent, until al least one picture is found.
+                //If node contains more than one price - cycle is aborted.
                 do
                 {
-                    urls = node.Descendants("img")
-                                   .Select(e => e.GetAttributeValue("src", null))
-                                   .Where(s => !String.IsNullOrEmpty(s));
+                    urls = node.GetImageURLs();
 
                     //if in one segment there is more than one price or no prices - node doesn't contain product
-                    if (CheckNodeForCurrency(node) !=1)
+                    if (GetNodePriceCount(node, pdp) != 1)
                     {
                         break;
                     }
 
                     if (urls.Count() > 0)
                     {
-                        HashSet<Image> images = new HashSet<Image>();
-                        foreach (var u in urls)
-                        {
-                            var url = u;
-                            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
-                            {
-                                url = domain + url;
-                            }
+                        products.Add(BuildProduct(node, pdp, cni.CurrencyRegex, urls, cni.Currency));
 
-                            var hwr = (HttpWebRequest)WebRequest.Create(uri);
-                            var extension = CurrencyRegices.regImageExtension.Match(url); 
-                            hwr.Method = "GET";
-                            hwr.Accept = "image/"+extension+",image/*";
-                            hwr.KeepAlive = false;
-                            var resp = hwr.GetResponse();
-                            var respStream = resp.GetResponseStream();
-                            var contentLen = resp.ContentLength;
-                            byte[] outData;
-                            using (var tempMemStream = new MemoryStream())
-                            {
-                                byte[] buffer = new byte[128];
-                                while (true)
-                                {
-                                    int read = respStream.Read(buffer, 0, buffer.Length);
-                                    if (read <= 0)
-                                    {
-                                        outData = tempMemStream.ToArray();
-                                        break;
-                                    }
-                                    tempMemStream.Write(buffer, 0, read);
-                                }
-                            }
-
-                            images.Add(new Image(outData));
-
-                            
-                        }
-
-                        var description = node.GetLongestInnerText();
-
-                        if (description != "") {
-                            products.Add(new Product(shortDomain, description , Int32.Parse(price), images));
-                        }
                         break;
                     }
 
@@ -105,17 +134,49 @@ namespace TestTask2.AgilityPackClasses
         }
 
         /// <summary>
+        /// Get product from node data
+        /// </summary>
+        /// <param name="node">node</param>
+        /// <param name="pdp">Parse params</param>
+        /// <param name="curRegex">currency Regex</param>
+        /// <param name="urls">urls of images</param>
+        /// <returns></returns>
+        private static Product BuildProduct(HtmlNode node, ParseDomainParams pdp, Regex curRegex, IEnumerable<string> urls, Currency currency)
+        {
+            //Parsing price value from node
+            string price = FindPrice(node, curRegex, pdp);
+
+            HashSet<Image> images = new HashSet<Image>();
+            foreach (var u in urls)
+            {
+                var img = StringUtils.ImageRegexes.BuildImage(u, pdp.Domain);
+                if(img!=null)
+                images.Add(img);
+            }
+
+            string description = node.GetProductDescription(curRegex, pdp);
+
+            if (description != "")
+            {
+                return new Product(pdp.Domain, description, Int32.Parse(price), images, currency);
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Gets the longest value of InnerText of object which doesn't contain children with non-empty innerText
         /// </summary>
-        /// <param name="node"></param>
+        /// <param name="node">node</param>
+        /// <param name="pdp">node</param>
+        /// <param name="curRegex">Currency Regex</param>
         /// <returns>The longest inner text</returns>
-        public static string GetLongestInnerText(this HtmlNode node)
+        private static string GetLongestInnerText(this HtmlNode node, ParseDomainParams pdp, Regex curRegex)
         {
             var sLongest = "";
 
             foreach (var child in node.ChildNodes)
             {
-                var s = child.GetLongestInnerText();
+                var s = child.GetLongestInnerText(pdp, curRegex);
                 if (s.Length > sLongest.Length)
                 {
                     sLongest = s;
@@ -124,10 +185,19 @@ namespace TestTask2.AgilityPackClasses
 
             if (sLongest.Length == 0)
             {
-                if (CheckNodeForCurrency(node) == 0)
-                    return node.InnerText;
-                else
-                    return "";
+                var res = node.InnerText;
+                int priceCount = curRegex.Matches(res).Count;
+
+                if (priceCount > 1) return "";
+
+                if (priceCount == 1)
+                {
+                    var replace = curRegex.Match(res).Value;
+                    if (replace == "") return "";
+                    res = res.Replace(replace, "");
+                }
+
+                return res;
             }
             return sLongest;
         }
@@ -137,28 +207,96 @@ namespace TestTask2.AgilityPackClasses
         /// </summary>
         /// <param name="node"></param>
         /// <returns></returns>
-        private static HashSet<HtmlNode> GetNodesContainingCurrency(HtmlNode node)
+        private static HashSet<NodeCurrencyInfo> GetInnerNodesContainingSinglePrice(HtmlNode node, ParseDomainParams pdp)
         {
-            HashSet<HtmlNode> res = new HashSet<HtmlNode>();
+            HashSet<NodeCurrencyInfo> res = new HashSet<NodeCurrencyInfo>();
 
             if (node.Name == "script")
                 return res;
-
-            if (CheckNodeForCurrency(node)>0)
+            List<Task> tasks = new List<Task>();
+            object lockObj = new object();
+            int matchesCount = TryGetAnyOccurance(node, pdp, out CurrencyRegexes currency, out Regex regex);
+            if (matchesCount>0)
             {
                 foreach (var child in node.ChildNodes)
                 {
-                    foreach (var c in GetNodesContainingCurrency(child))
+                    Task t = new Task(() =>
                     {
-                        res.Add(c);
-                    }
+                        HashSet<NodeCurrencyInfo> currencyInfos = GetInnerNodesContainingSinglePrice(child, pdp);
+                        foreach (var c in currencyInfos)
+                        {
+                            res.LAdd(c, lockObj);
+                        }
+                    });
+                    t.Start();
+                    tasks.Add(t);
                 }
-                if (res.Count() == 0)
+
+                Task.WaitAll(tasks.ToArray());
+
+                if (res.Count() == 0 && matchesCount==1)
                 {
-                    res.Add(node);
+                    res.Add(new NodeCurrencyInfo(node, currency, regex));
                 }
             }
             return res;
+        }
+
+        /// <summary>
+        /// Checks if the attribute ("грн" for instance) is contained only once in the node
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        private static bool TryGetSingleOccurance(HtmlNode node, ParseDomainParams pdp, out CurrencyRegexes currency, out Regex regex)
+        {
+            regex = null;
+            currency = null;
+
+            bool found = false;
+            foreach (var cur in pdp.CurRegexes)
+                foreach (var reg in cur.Regexes)
+                {
+                    var matches = reg.Matches(node.InnerText).Count;
+                    if (matches > 1) return false;
+                    if (matches == 1)
+                    {
+                        if (found) return false;
+
+                        regex = reg;
+                        currency = cur;
+
+                        found = true;
+                    }
+                }
+
+            return found;
+        }
+
+        /// <summary>
+        /// Checks if the attribute ("грн" for instance) is contained once or more in the node
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        private static int TryGetAnyOccurance(HtmlNode node, ParseDomainParams pdp, out CurrencyRegexes currency, out Regex regex)
+        {
+            regex = null;
+            currency = null;
+
+            int foundCount = 0;
+            foreach (var cur in pdp.CurRegexes)
+                foreach (var reg in cur.Regexes)
+                {
+                    var matches = reg.Matches(node.InnerText).Count;
+                    foundCount += matches;
+                    if (matches>0)
+                    {
+                        regex = reg;
+                        currency = cur;
+                    }
+                    if (foundCount > 1) return foundCount;
+                }
+
+            return foundCount;
         }
 
         /// <summary>
@@ -166,30 +304,69 @@ namespace TestTask2.AgilityPackClasses
         /// </summary>
         /// <param name="node"></param>
         /// <returns></returns>
-        private static int CheckNodeForCurrency(HtmlNode node)
+        private static int GetNodePriceCount(HtmlNode node, ParseDomainParams pdp)
         {
             int res = 0;
-
-            foreach(var reg in CurrencyRegices.CurRegices)
-            {
-                res += reg.Matches(node.InnerText).Count;
-            }
+            foreach (var cur in pdp.CurRegexes)
+                foreach (var reg in cur.Regexes)
+                {
+                    res += reg.Matches(node.InnerText).Count;
+                }
 
             return res;
         }
 
-        private static string FindPrice(HtmlNode node)
+        /// <summary>
+        /// Finds price value
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        private static string FindPrice(HtmlNode node, Regex curRegex, ParseDomainParams pdp)
         {
-            foreach (var reg in CurrencyRegices.CurRegices)
+            var v = curRegex.Match(node.InnerText).Value;
+            if (v != "")
             {
-                var v = reg.Match(node.InnerText).Value;
-                if (v != "")
-                {
-                    var s = CurrencyRegices.price.Match(v).Value;
-                    return CurrencyRegices.CutPrice(s);
-                }
+                var s = pdp.PriceRegex.Match(v).Value;
+                return Currencies.CutPrice(s, pdp.CurrencySeparators);
             }
+
             return "";
+        }
+
+        private static string GetProductDescription(this HtmlNode node, Regex curRegex, ParseDomainParams pdp)
+        {
+            string description;
+            if (pdp.DescriptionGetKind == DescriptionGetKind.dgkLongest)
+            {
+                description = node.GetLongestInnerText(pdp, curRegex);
+            }
+            else //if(pdp.DescriptionGetKind==DescriptionGetKind.dgkFull)
+            {
+                description = node.InnerText;
+
+                string match = curRegex.Match(description).Value;
+
+                description = description.Replace(match, "");
+            }
+
+            foreach (var s in pdp.SkipDecriptionWhenFound)
+            {
+                if (description.Contains(s)) return "";
+            }
+
+            foreach (var s in pdp.ReplaceInDecription)
+            {
+                description = description.Replace(s, "");
+            }
+
+            return description;
+        }
+
+        private static IEnumerable<string> GetImageURLs(this HtmlNode node)
+        {
+            return node.Descendants("img")
+                                   .Select(e => e.GetAttributeValue("src", null))
+                                   .Where(s => !String.IsNullOrEmpty(s));
         }
     }
 }

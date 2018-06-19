@@ -20,6 +20,7 @@ namespace TestTask2.Models
             this.DeltaPrice = p.DeltaPrice;
             this.Price = p.Price;
             this.ImagesBase64 = imagesBase64;
+            this.Currency = p.Currency;
         }
     }
 }

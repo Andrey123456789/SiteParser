@@ -1,11 +1,16 @@
 ﻿//Get all products. If domain is not empty, program reads data from it before get all data
-function GetAllProducts(domain) {
+function GetAllProducts(pdp) {
     $('#parseDomain').prop('disabled', true);
     console.log("GetAllProducts start");
-
+    console.log(pdp);
+    var spdp = JSON.stringify(pdp);
+    console.log("spdp=" + spdp);
     $.ajax({
-        url: '/api/values/getproducts/?domain=' + domain,
-        type: 'GET',
+        url: '/api/values/getproducts',
+        cache: false,
+        type: 'POST',
+        contentType: 'application/json; charset=utf-8',
+        data: spdp,
         dataType: 'json',
         success: function (data) {
             $('#parseDomain').prop('disabled', false);
@@ -32,10 +37,11 @@ function WriteResponse(products) {
         console.log("Description=" + product.Description);
         console.log("Price=" + product.Price);
         console.log("Delta=" + product.DeltaPrice);
+        console.log("Currency=" + product.Currency.Short);
         console.log("Redirection link:" + $("#RedirectTo").val());
         //Adding triangle sign to describe price change:
         var delta = "" + ((product.DeltaPrice > 0) ? '<div class="green">+' + product.DeltaPrice + '</div>' : "") + ((product.DeltaPrice < 0) ? '<div class="red">' + product.DeltaPrice + '</div>' : "");
-        strResult += "<tr><td>" + product.Domain + "</td><td> " + product.Description + "</td><td>" + product.Price + "</td><td>" + delta + "</td><td><a href='" + $("#RedirectTo").val() + '?id=' + product.Id + "' >Show</a></td></tr>";
+        strResult += "<tr><td>" + product.Domain + "</td><td> " + product.Description + "</td><td>" + product.Price +" " +product.Currency.Short + "</td><td>" + delta + "</td><td><a href='" + $("#RedirectTo").val() + '?id=' + product.Id + "' >Show</a></td></tr>";
 
     });
     strResult += "</table>";
@@ -50,7 +56,7 @@ function ShowProduct(product) {
     if (product != null) {
         $("#productDescription").append(product.Description);
         $("#productSite").append(product.Domain);
-        $("#productPrice").append(product.Price);
+        $("#productPrice").append(product.Price + " " + product.Currency.Short);
 
         var delta = product.DeltaPrice;
 
@@ -72,7 +78,7 @@ function ShowProduct(product) {
             //}
             //else {
                 //$("#carouselIndicators").append('<li data-target="#myCarousel" data-slide-to="' + index + '"></li>');
-            $("#carouselGroup").append('<div class="item imageDiv" align="center"><img class="imageBorder" src="data:image/jpeg;base64,' + image + '"></div>');
+            $("#carouselGroup").append('<div class="item imageDiv" align="center"><img class="imageBorder" src="data:image/' + image + '"></div>');
             $("#carouselIndicators").append('<li data-target="#myCarousel" data-slide-to="' + index + '"></li>');
             //}
         });

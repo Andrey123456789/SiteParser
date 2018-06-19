@@ -13,6 +13,10 @@ namespace TestTask2.EF
         DbSet<Product> Products { get; set; }
         DbSet<Image> Images { get; set; }
         int SaveChanges();
-        void LoadImages(Product p);
+        void LoadConnections(Product p);
+        void LoadCurrency(Product p);
+        Currency FindCurrency(string code);
+
     }
+
 }
