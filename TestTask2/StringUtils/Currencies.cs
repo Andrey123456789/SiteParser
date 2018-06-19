@@ -10,7 +10,7 @@ namespace TestTask2.StringUtils
     public class Currencies
     {
 
-        private static string priceStr = @"[\d\s\n_separators_]*[\d]+_decimalSeparator_[\d\s\n_separators_]*";//@"[\d\s\.,'`]*[\d]+[\d\s\.,'`]*";
+        private static string priceStr = @"[\d\s\r\n\t_separators_]*[\d]+_decimalSeparator_[\d\s\r\n\t_separators_]*";
 
         private static string connectionStr = @"\s*";
 
@@ -116,14 +116,9 @@ namespace TestTask2.StringUtils
         /// <param name="s">price string</param>
         /// <param name="strsToRemove">string patterns to remove from price string</param>
         /// <returns></returns>
-        public static string CutPrice(string s, string[] strsToRemove)
+        public static string CutPrice(string s, string decimalSeparator)
         {
-            foreach (string c in strsToRemove)
-            {
-                s = s.Replace(c, String.Empty);
-            }
-
-            return s;
+            return Regex.Replace(s, "[^0-9" + decimalSeparator + "]", string.Empty);
         }
     }
 }

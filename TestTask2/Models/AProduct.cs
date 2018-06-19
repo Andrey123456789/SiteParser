@@ -23,7 +23,7 @@ namespace TestTask2.Models
 
         public virtual Currency Currency { get; set; }
 
-        public AProduct(string domain, string descrption, int price, Currency currency)
+        public AProduct(string domain, string descrption, decimal price, Currency currency)
         {
             this.Description = descrption;
             this.Price = price;

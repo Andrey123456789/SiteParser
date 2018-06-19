@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Policy;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using HtmlAgilityPack;
@@ -158,7 +159,7 @@ namespace TestTask2.AgilityPackClasses
 
             if (description != "")
             {
-                return new Product(pdp.Domain, description, Int32.Parse(price), images, currency);
+                return new Product(pdp.Domain, description, Decimal.Parse(price,System.Globalization.NumberStyles.Currency), images, currency);
             }
             return null;
         }
@@ -327,7 +328,10 @@ namespace TestTask2.AgilityPackClasses
             if (v != "")
             {
                 var s = pdp.PriceRegex.Match(v).Value;
-                return Currencies.CutPrice(s, pdp.CurrencySeparators);
+                s = Currencies.CutPrice(s, pdp.DecimalSeparator);
+                if(pdp.DecimalSeparator!="")
+                    s=s.Replace(pdp.DecimalSeparator, Thread.CurrentThread.CurrentCulture.NumberFormat.CurrencyDecimalSeparator);
+                return s;
             }
 
             return "";

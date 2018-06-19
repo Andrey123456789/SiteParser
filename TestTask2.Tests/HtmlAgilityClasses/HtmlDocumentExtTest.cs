@@ -20,11 +20,15 @@ namespace TestTask2.Tests.HtmlAgilityClasses
 
         byte[] img;
 
+        List<Product> prTest;
+
         Currencies CurRegexes;
 
         CurrencyRegexes currency;
 
-        HashSet<Product> prTest;
+        string[] currencySeparators;
+
+        string decimalSeparator;
 
         JavaScriptSerializer js;
 
@@ -49,120 +53,119 @@ namespace TestTask2.Tests.HtmlAgilityClasses
 
             doc.DocumentNode.InnerHtml =
 
-        @"<!DOCTYPE html>                                                                                             " +
-        @"<html>"+
-        @"<head>"+
-        @"</head>"+
-        @"<body>"+
-        @"<script>"+
-        @"var s='< div > "+
+        @"<!DOCTYPE html>" +
+        @"<html>" +
+        @"<head>" +
+        @"</head>" +
+        @"<body>" +
+        @"<script>" +
+        @"var s='< div > " +
         @"	<span>Товар 4 deleteWord</span>" +
         @"	<img src='http://via.placeholder.com/300/09f.png' />" +
         @"	<div>10 грн</div>" +
         @"</div>';" +
-        @"</script>"+
-        @"<div>"+
-        @"	<div>10 грн</div>"+
-        @"</div>"+
-        @"<div>"+
+        @"</script>" +
+        @"<div>" +
+        @"	<div>10 грн</div>" +
+        @"</div>" +
+        @"<div>" +
         @"	<span>Товар 1 deleteWord</span>" +
-        @"	<img src='http://via.placeholder.com/300/09f.png' />"+
-        @"	<div>10 грн</div>"+
-        @"</div>"+
-        @"<div><img src='http://via.placeholder.com/300/09f.png' /></div>"+
-        @"<div>"+
+        @"	<img src='http://via.placeholder.com/300/09f.png' />" +
+        @"	<div>10"+
+        @" 0`0'" +
+        @"0.0 0'0'1 грн </div>" +
+        @"</div>" +
+        @"<div><img src='http://via.placeholder.com/300/09f.png' /></div>" +
+        @"<div>" +
         @"	<span>Товар 2 deleteWord</span>" +
-        @"	<img src='http://via.placeholder.com/300/09f.png' />"+
-        @"	<img src='http://via.placeholder.com/300/09f.png' />"+
-        @"	<div>20 грн</div>"+
-        @"</div>"+
-        @"<div>"+
-        @""+
+        @"	<img src='http://via.placeholder.com/300/09f.png' />" +
+        @"	<img src='http://via.placeholder.com/300/09f.png' />" +
+        @"	<div>20 грн</div>" +
+        @"</div>" +
+        @"<div>" +
+        @"" +
         @"<div><div><div><div>Товар 3 deleteWord</div></div></div></div>" +
-        @"	<img src='http://via.placeholder.com/300/09f.png' />"+
-        @"	<div>30 грн</div>"+
-        @"</div>"+
+        @"	<img src='http://via.placeholder.com/300/09f.png' />" +
+        @"	<div>30 грн</div>" +
+        @"</div>" +
         @"<div><div><div><div>Товар неликвидный</div></div></div></div>" +
         @"	<img src='http://via.placeholder.com/300/09f.png' />" +
         @"	<div>1005000 грн</div>" +
         @"</div>" +
         @"</body>" +
         @"</html>";
-
-            CurRegexes = new Currencies("", new string[] { "`", "\t", "\n", });
+            decimalSeparator = ".";
+            currencySeparators = new string[] { "`", "'", "\t", "\n",};
+            CurRegexes = new Currencies(decimalSeparator, currencySeparators );
             currency = CurRegexes.GetAllCurRegexes().First();
             js = new JavaScriptSerializer();
+            prTest = new List<Product>()
+            {
+                new Product("http://via.placeholder.com/","Товар 2",20,new HashSet<Image>(){new Image(img,"png"), new Image(img,"png") },currency),
+                new Product("http://via.placeholder.com/","Товар 3",30,new HashSet<Image>(){new Image(img,"png") },currency),
+                new Product("http://via.placeholder.com/","Товар 1",10000.0001m,new HashSet<Image>(){new Image(img,"png") },currency),
+            };
+
+            
         }
 
         [TestMethod]
         public void GetProductsHashSet_InnerLongest()
         {
-            prTest = new HashSet<Product>()
-            {
-                new Product("http://via.placeholder.com/","Товар 3",30,new HashSet<Image>(){new Image(img,"png") },currency),
-                new Product("http://via.placeholder.com/","Товар 2",20,new HashSet<Image>(){new Image(img,"png"), new Image(img,"png") },currency),
-                new Product("http://via.placeholder.com/","Товар 1",10,new HashSet<Image>(){new Image(img,"png") },currency),
-            };
-            var pdp = new ParseDomainParams("http://via.placeholder.com/", new HashSet<string>() { " deleteWord", "\t" }, new HashSet<string>() { "неликвидный" }, new string[] { "`", "\t", "\n", }, "", AgilityPackClasses.DescriptionGetKind.dgkLongest, AgilityPackClasses.SearchPriceKind.spkInner);
+            var pdp = new ParseDomainParams("http://via.placeholder.com/", new HashSet<string>() { " deleteWord", "\t" }, new HashSet<string>() { "неликвидный" }, currencySeparators, decimalSeparator, AgilityPackClasses.DescriptionGetKind.dgkLongest, AgilityPackClasses.SearchPriceKind.spkInner);
             var products = doc.GetProducts(pdp);
             Debug.WriteLine(js.Serialize(products));
             Debug.WriteLine(js.Serialize(prTest));
             Assert.IsNotNull(products);
-            Assert.AreEqual(js.Serialize(products), js.Serialize(prTest));
+            List<Product> pList = products.ToList();
+            pList.Sort((x, y) =>
+    x.Price.CompareTo(y.Price));
+            Assert.AreEqual(js.Serialize(pList), js.Serialize(prTest));
 
         }
 
         [TestMethod]
         public void GetProductsHashSet_OuterLongest()
         {
-            prTest = new HashSet<Product>()
-            {
-                new Product("http://via.placeholder.com/","Товар 3",30,new HashSet<Image>(){new Image(img,"png") },currency),
-                new Product("http://via.placeholder.com/","Товар 1",10,new HashSet<Image>(){new Image(img,"png") },currency),
-                new Product("http://via.placeholder.com/","Товар 2",20,new HashSet<Image>(){new Image(img,"png"), new Image(img,"png") },currency),
-            };
-            var pdp = new ParseDomainParams("http://via.placeholder.com/", new HashSet<string>() { " deleteWord", "\t" }, new HashSet<string>() { "неликвидный" }, new string[] { "`", "\t", "\n", }, "", AgilityPackClasses.DescriptionGetKind.dgkLongest, AgilityPackClasses.SearchPriceKind.spkOuter);
+            var pdp = new ParseDomainParams("http://via.placeholder.com/", new HashSet<string>() { " deleteWord", "\t" }, new HashSet<string>() { "неликвидный" }, currencySeparators, decimalSeparator, AgilityPackClasses.DescriptionGetKind.dgkLongest, AgilityPackClasses.SearchPriceKind.spkOuter);
             var products = doc.GetProducts(pdp);
             Debug.WriteLine(js.Serialize(products));
             Debug.WriteLine(js.Serialize(prTest));
             Assert.IsNotNull(products);
-            Assert.AreEqual(js.Serialize(products), js.Serialize(prTest));
+            List<Product> pList = products.ToList();
+            pList.Sort((x, y) =>
+                x.Price.CompareTo(y.Price));
+            Assert.AreEqual(js.Serialize(pList), js.Serialize(prTest));
 
         }
 
         [TestMethod]
         public void GetProductsHashSet_InnerFull()
         {
-            prTest = new HashSet<Product>()
-            {
-                new Product("http://via.placeholder.com/","Товар 3",30,new HashSet<Image>(){new Image(img,"png") },currency),
-                new Product("http://via.placeholder.com/","Товар 2",20,new HashSet<Image>(){new Image(img,"png"), new Image(img,"png") },currency),
-                new Product("http://via.placeholder.com/","Товар 1",10,new HashSet<Image>(){new Image(img,"png") },currency),
-            };
-            var pdp = new ParseDomainParams("http://via.placeholder.com/", new HashSet<string>() { " deleteWord", "\t" }, new HashSet<string>() { "неликвидный" }, new string[] { "`", "\t", "\n", }, "", AgilityPackClasses.DescriptionGetKind.dgkFull, AgilityPackClasses.SearchPriceKind.spkInner);
+            var pdp = new ParseDomainParams("http://via.placeholder.com/", new HashSet<string>() { " deleteWord", "\t" }, new HashSet<string>() { "неликвидный" }, currencySeparators, decimalSeparator, AgilityPackClasses.DescriptionGetKind.dgkFull, AgilityPackClasses.SearchPriceKind.spkInner);
             var products = doc.GetProducts(pdp);
             Debug.WriteLine(js.Serialize(products));
             Debug.WriteLine(js.Serialize(prTest));
             Assert.IsNotNull(products);
-            Assert.AreEqual(js.Serialize(products), js.Serialize(prTest));
+            List<Product> pList = products.ToList();
+            pList.Sort((x, y) =>
+                x.Price.CompareTo(y.Price));
+            Assert.AreEqual(js.Serialize(pList), js.Serialize(prTest));
 
         }
 
         [TestMethod]
         public void GetProductsHashSet_OuterFull()
         {
-            prTest = new HashSet<Product>()
-            {
-                new Product("http://via.placeholder.com/","Товар 3",30,new HashSet<Image>(){new Image(img,"png") },currency),
-                new Product("http://via.placeholder.com/","Товар 1",10,new HashSet<Image>(){new Image(img,"png") },currency),
-                new Product("http://via.placeholder.com/","Товар 2",20,new HashSet<Image>(){new Image(img,"png"), new Image(img,"png") },currency),
-            };
-            var pdp = new ParseDomainParams("http://via.placeholder.com/", new HashSet<string>() { " deleteWord", "\t" }, new HashSet<string>() { "неликвидный" }, new string[] { "`", "\t", "\n", }, "", AgilityPackClasses.DescriptionGetKind.dgkFull, AgilityPackClasses.SearchPriceKind.spkOuter);
+            var pdp = new ParseDomainParams("http://via.placeholder.com/", new HashSet<string>() { " deleteWord", "\t" }, new HashSet<string>() { "неликвидный" }, currencySeparators, decimalSeparator, AgilityPackClasses.DescriptionGetKind.dgkFull, AgilityPackClasses.SearchPriceKind.spkOuter);
             var products = doc.GetProducts(pdp);
             Debug.WriteLine(js.Serialize(products));
             Debug.WriteLine(js.Serialize(prTest));
             Assert.IsNotNull(products);
-            Assert.AreEqual(js.Serialize(products), js.Serialize(prTest));
+            List<Product> pList = products.ToList();
+            pList.Sort((x, y) =>
+                x.Price.CompareTo(y.Price));
+            Assert.AreEqual(js.Serialize(pList), js.Serialize(prTest));
 
         }
     }
